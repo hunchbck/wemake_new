@@ -1,87 +1,129 @@
-# Welcome to React Router!
+# 분양인을 위한 앱
 
-A modern, production-ready template for building full-stack React applications using React Router.
+*부동산 분양을 하는 사람들을 위한 앱*
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## 📌 프로젝트 개요
+- **프로젝트명**: 부동산 분양 통합 관리 플랫폼
+- **목적**: 분양 업무 효율화 및 조직 관리를 위한 통합 플랫폼 구축
+- **대상 사용자**: 시행사, 대행사, 분양사원, 공인중개사
 
-## Features
+## 🏗️ 시스템 아키텍처
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+### 1. 기술 스택
+- **프론트엔드**: React, TypeScript, Tailwind CSS
+- **라우팅**: React Router 7 (Remix)
+- **백엔드**: Supabase
+- **데이터베이스**: PostgreSQL (Supabase)
+- **ORM**: Drizzle ORM
+- **배포**: Vercel/Netlify
+- **기타**: WebSocket(실시간 알림)
 
-## Getting Started
+## 👥 사용자 유형 및 권한
 
-### Installation
+### 1. 사용자 유형
+| 유형 | 설명 |
+|------|------|
+| 시행사 직원 | 분양 사업을 시행하는 회사 소속 직원 |
+| 대행사 직원 | 분양 대행 업체 직원 |
+| 공인중개사 | 부동산 중개 자격 보유자 |
+| 분양사원 | 분양 현장에서 근무하는 영업 사원 |
 
-Install the dependencies:
+### 2. 회원가입 및 인증
+- **기본 정보**
+  - 사용자명 (username)
+  - 비밀번호 (password)
+  - 실명 (이름)
+  - 이메일 주소
+  - 휴대폰 번호
 
-```bash
-npm install
+- **소셜 로그인 연동**
+  - 카카오톡
+  - 구글
+  - 애플
+  - 네이버
+  - 페이스북
+  - 인스타그램
+
+### 3. 조직 구조
+```
+센터장
+├── 총괄본부장 (2명 이상의 본부장)
+    ├── 본부장 (2개 이상의 팀장)
+    │   ├── 팀장 (2명 이상의 팀원)
+    │   │   └── 팀원
+    │   └── 팀장
+    └── 본부장
 ```
 
-### Development
+## 🏢 부동산 유형
 
-Start the development server with HMR:
+### 1. 주거용 부동산
+- 아파트
+- 빌라
+- 단독주택
+- 오피스텔
+- 기타 주거시설
 
-```bash
-npm run dev
-```
+### 2. 비주거용 부동산
+- 오피스텔
+- 상가
+- 사무실(오피스)
+- 지식산업센터
+- 기타 상업시설
 
-Your application will be available at `http://localhost:5173`.
+## 🎯 주요 기능
 
-## Building for Production
+### 1. 조직 관리
+- **조직 생성 및 관리**
+  - 현장별 조직도 생성
+  - 계층 구조 관리
+  - 유연한 조직 구성
 
-Create a production build:
+- **멤버십 관리**
+  - 역할별 가입 및 승인 프로세스
+  - 중복 역할 허용
 
-```bash
-npm run build
-```
+### 2. 분양 관리
+- **프로젝트 관리**
+  - 현장장 기본 정보 등록/수정
+  - 분양 일정 관리
+  - 평형별 모델하우스 정보
+  - 분양가격 관리
 
-## Deployment
+- **고객 관리**
+  - 고객 정보 관리
+  - 상담 이력 추적
+  - 계약 현황 관리
 
-### Docker Deployment
+### 3. 영업 지원
+- **분양 현황 대시보드**
+  - 실시간 문의 관리
+  - 일정 관리
+  - 성과 분석
 
-To build and run using Docker:
+### 4. 마케팅 도구
+- **온라인 계약 시스템**
+- **가상 현실(VR) 집구경**
+- **온라인 상담 시스템**
 
-```bash
-docker build -t my-app .
+## 🖥️ 화면 구성
 
-# Run the container
-docker run -p 3000:3000 my-app
-```
+### 1. 대시보드
+- 주요 현황 요약
+- 일정 관리
+- 미처리 업무 현황
 
-The containerized application can be deployed to any platform that supports Docker, including:
+### 2. 조직 관리
+- 조직도 시각화
+- 멤버 초대 및 관리
+- 권한 설정
 
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
+### 3. 분양 관리
+- 분양 단지 목록
+- 분양 현황
+- 계약 관리
 
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+### 4. 마이페이지
+- 개인 정보 관리
+- 활동 내역
+- 알림 설정
