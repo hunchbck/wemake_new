@@ -27,28 +27,28 @@ export function ProductCard({
   votesCount,
 }: ProductCardProps) {
   return (
-    <Link to={`/products/${id}`}>
-      <Card className="w-full flex items-center justify-between bg-transparent hover:bg-card/50">
+    <Link className="block" to={`/products/${id}`}>
+      <Card className="hover:bg-card/50 flex w-full items-center justify-between bg-transparent">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+          <CardTitle className="text-2xl leading-none font-semibold tracking-tight">
             {name}
           </CardTitle>
           <CardDescription className="text-muted-foreground">
             {description}
           </CardDescription>
-          <div className="flex items-center gap-4 mt-2">
-            <div className="flex items-center gap-px text-xs text-muted-foreground">
-              <MessageCircleIcon className="w-4 h-4" />
+          <div className="mt-2 flex items-center gap-4">
+            <div className="text-muted-foreground flex items-center gap-px text-xs">
+              <MessageCircleIcon className="h-4 w-4" />
               <span>{commentsCount}</span>
             </div>
-            <div className="flex items-center gap-px text-xs text-muted-foreground">
-              <EyeIcon className="w-4 h-4" />
+            <div className="text-muted-foreground flex items-center gap-px text-xs">
+              <EyeIcon className="h-4 w-4" />
               <span>{viewsCount}</span>
             </div>
           </div>
         </CardHeader>
         <CardFooter className="py-0">
-          <Button variant="outline" className="flex flex-col h-14">
+          <Button className="flex h-14 flex-col" variant="outline">
             <ChevronUpIcon className="size-4 shrink-0" />
             <span>{votesCount}</span>
           </Button>
