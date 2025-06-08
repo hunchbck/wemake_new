@@ -115,7 +115,7 @@ const menus = [
       {
         name: "Create a Post",
         description: "Create a post in our community",
-        to: "/community/create"
+        to: "/community/submit"
       }
     ]
   },
@@ -144,11 +144,17 @@ const menus = [
 export default function Navigation({
   isLoggedIn,
   hasNotifications,
-  hasMessages
+  hasMessages,
+  username,
+  avatar,
+  name
 }: {
   isLoggedIn: boolean;
   hasNotifications: boolean;
   hasMessages: boolean;
+  username?: string;
+  avatar?: string | null;
+  name?: string;
 }) {
   return (
     <nav className="bg-background/50 fixed top-0 right-0 left-0 z-50 flex h-16 items-center justify-between px-20 backdrop-blur">
@@ -227,14 +233,19 @@ export default function Navigation({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar>
-                <AvatarImage src="https://github.com/serranoarevalo.png" />
-                <AvatarFallback>N</AvatarFallback>
+                {avatar ? (
+                  <AvatarImage className="object-cover" src={avatar} />
+                ) : (
+                  <AvatarFallback>{name?.[0]}</AvatarFallback>
+                )}
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel className="flex flex-col">
-                <span className="font-medium">John Doe</span>
-                <span className="text-muted-foreground text-xs">@username</span>
+                <span className="font-medium">{name}</span>
+                <span className="text-muted-foreground text-xs">
+                  @{username}
+                </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>

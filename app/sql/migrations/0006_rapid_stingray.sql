@@ -1,0 +1,1 @@
+ALTER TABLE "post_replies" DROP CONSTRAINT "post_replies_parent_id_post_replies_post_reply_id_fk";

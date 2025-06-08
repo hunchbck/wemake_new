@@ -4,18 +4,20 @@ import { z } from "zod";
 import { Hero } from "~/common/components/hero";
 import ProductPagination from "~/common/components/product-pagination";
 import { Button } from "~/common/components/ui/button";
+import { makeSSRClient } from "~/supa-client";
 import { ProductCard } from "../components/product-card";
+import { getProductPagesByDateRange, getProductsByDateRange } from "../queries";
 import type { Route } from "./+types/monthly-leaderboard-page";
 
 const paramsSchema = z.object({
   year: z.coerce.number(),
-  month: z.coerce.number(),
+  month: z.coerce.number()
 });
 
 export const meta: Route.MetaFunction = ({ params }) => {
   const date = DateTime.fromObject({
     year: Number(params.year),
-    month: Number(params.month),
+    month: Number(params.month)
   })
     .setZone("Asia/Seoul")
     .setLocale("ko");
@@ -23,36 +25,36 @@ export const meta: Route.MetaFunction = ({ params }) => {
     {
       title: `Best of ${date.toLocaleString({
         month: "long",
-        year: "2-digit",
-      })} | wemake`,
-    },
+        year: "2-digit"
+      })} | wemake`
+    }
   ];
 };
 
-export const loader = ({ params }: Route.LoaderArgs) => {
+export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { success, data: parsedData } = paramsSchema.safeParse(params);
   if (!success) {
     throw data(
       {
         error_code: "invalid_params",
-        message: "Invalid params",
+        message: "Invalid params"
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
   const date = DateTime.fromObject({
     year: parsedData.year,
-    month: parsedData.month,
+    month: parsedData.month
   }).setZone("Asia/Seoul");
   if (!date.isValid) {
     throw data(
       {
         error_code: "invalid_date",
-        message: "Invalid date",
+        message: "Invalid date"
       },
       {
-        status: 400,
-      },
+        status: 400
+      }
     );
   }
   const today = DateTime.now().setZone("Asia/Seoul").startOf("month");
@@ -60,22 +62,36 @@ export const loader = ({ params }: Route.LoaderArgs) => {
     throw data(
       {
         error_code: "future_date",
-        message: "Future date",
+        message: "Future date"
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
+  const url = new URL(request.url);
+  const { client, headers } = makeSSRClient(request);
+  const products = await getProductsByDateRange(client, {
+    startDate: date.startOf("month"),
+    endDate: date.endOf("month"),
+    limit: 15,
+    page: Number(url.searchParams.get("page") || 1)
+  });
+  const totalPages = await getProductPagesByDateRange(client, {
+    startDate: date.startOf("month"),
+    endDate: date.endOf("month")
+  });
   return {
-    ...parsedData,
+    products,
+    totalPages,
+    ...parsedData
   };
 };
 
 export default function MonthlyLeaderboardPage({
-  loaderData,
+  loaderData
 }: Route.ComponentProps) {
   const urlDate = DateTime.fromObject({
     year: loaderData.year,
-    month: loaderData.month,
+    month: loaderData.month
   });
   const previousMonth = urlDate.minus({ months: 1 });
   const nextMonth = urlDate.plus({ months: 1 });
@@ -85,7 +101,7 @@ export default function MonthlyLeaderboardPage({
       <Hero
         title={`Best of ${urlDate.toLocaleString({
           month: "long",
-          year: "2-digit",
+          year: "2-digit"
         })}`}
       />
       <div className="flex items-center justify-center gap-2">
@@ -96,7 +112,7 @@ export default function MonthlyLeaderboardPage({
             &larr;{" "}
             {previousMonth.toLocaleString({
               month: "long",
-              year: "2-digit",
+              year: "2-digit"
             })}
           </Link>
         </Button>
@@ -107,7 +123,7 @@ export default function MonthlyLeaderboardPage({
             >
               {nextMonth.toLocaleString({
                 month: "long",
-                year: "2-digit",
+                year: "2-digit"
               })}{" "}
               &rarr;
             </Link>
@@ -115,19 +131,19 @@ export default function MonthlyLeaderboardPage({
         ) : null}
       </div>
       <div className="mx-auto w-full max-w-screen-md space-y-5">
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.products.map((product) => (
           <ProductCard
-            key={`productId-${index}`}
-            commentsCount={12}
-            description="Product Description"
-            id={`productId-${index}`}
-            name="Product Name"
-            viewsCount={12}
-            votesCount={120}
+            key={product.product_id}
+            id={product.product_id.toString()}
+            name={product.name}
+            description={product.tagline}
+            reviewsCount={product.reviews}
+            viewsCount={product.views}
+            votesCount={product.upvotes}
           />
         ))}
       </div>
-      <ProductPagination totalPages={10} />
+      <ProductPagination totalPages={loaderData.totalPages} />
     </div>
   );
 }

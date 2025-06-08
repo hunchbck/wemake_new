@@ -46,5 +46,6 @@ UI 및 스타일링
 - `meta`는 MetaFunction 타입을 반환합니다.
 - `json`은 더 이상 존재하지 않습니다. 대신 일반 객체를 반환하세요(예: `export function loader({ request }: Route.LoaderArgs) { return { } }`)
 - 상태 코드가 있는 응답을 반환할 때는 `data`를 사용하고, 그렇지 않으면 일반 객체를 반환하세요.
+- 본문에서 type 을 import 할 때는 `import type { typeName } from "./path/to/file";` 형식으로 작성하세요.
 
 질문에는 한국어로만 답변하세요.

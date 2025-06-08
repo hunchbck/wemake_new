@@ -1,30 +1,30 @@
+import { ChevronUpIcon, EyeIcon, MessageCircleIcon } from "lucide-react";
 import { Link } from "react-router";
+import { Button } from "~/common/components/ui/button";
 import {
   Card,
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "~/common/components/ui/card";
-import { Button } from "~/common/components/ui/button";
-import { ChevronUpIcon, EyeIcon, MessageCircleIcon } from "lucide-react";
 
 interface ProductCardProps {
-  id: string;
+  id: number | string;
   name: string;
   description: string;
-  commentsCount: number;
-  viewsCount: number;
-  votesCount: number;
+  reviewsCount: string;
+  viewsCount: string;
+  votesCount: string;
 }
 
 export function ProductCard({
   id,
   name,
   description,
-  commentsCount,
+  reviewsCount,
   viewsCount,
-  votesCount,
+  votesCount
 }: ProductCardProps) {
   return (
     <Link className="block" to={`/products/${id}`}>
@@ -39,7 +39,7 @@ export function ProductCard({
           <div className="mt-2 flex items-center gap-4">
             <div className="text-muted-foreground flex items-center gap-px text-xs">
               <MessageCircleIcon className="h-4 w-4" />
-              <span>{commentsCount}</span>
+              <span>{reviewsCount}</span>
             </div>
             <div className="text-muted-foreground flex items-center gap-px text-xs">
               <EyeIcon className="h-4 w-4" />

@@ -10,28 +10,30 @@ export default [
   index("common/pages/home-page.tsx"),
   ...prefix("products", [
     index("features/products/pages/products-page.tsx"),
-    ...prefix("leaderboards", [
-      index("features/products/pages/leaderboard-page.tsx"),
-      route(
-        "/yearly/:year",
-        "features/products/pages/yearly-leaderboard-page.tsx"
-      ),
-      route(
-        "/monthly/:year/:month",
-        "features/products/pages/monthly-leaderboard-page.tsx"
-      ),
-      route(
-        "/daily/:year/:month/:day",
-        "features/products/pages/daily-leaderboard-page.tsx"
-      ),
-      route(
-        "/weekly/:year/:week",
-        "features/products/pages/weekly-leaderboard-page.tsx"
-      ),
-      route(
-        "/:period",
-        "features/products/pages/leaderboards-redirection-page.tsx"
-      )
+    layout("features/products/layouts/leaderboard-layout.tsx", [
+      ...prefix("leaderboards", [
+        index("features/products/pages/leaderboard-page.tsx"),
+        route(
+          "/yearly/:year",
+          "features/products/pages/yearly-leaderboard-page.tsx"
+        ),
+        route(
+          "/monthly/:year/:month",
+          "features/products/pages/monthly-leaderboard-page.tsx"
+        ),
+        route(
+          "/daily/:year/:month/:day",
+          "features/products/pages/daily-leaderboard-page.tsx"
+        ),
+        route(
+          "/weekly/:year/:week",
+          "features/products/pages/weekly-leaderboard-page.tsx"
+        ),
+        route(
+          "/:period",
+          "features/products/pages/leaderboards-redirection-page.tsx"
+        )
+      ])
     ]),
     ...prefix("categories", [
       index("features/products/pages/categories-page.tsx"),
@@ -40,6 +42,10 @@ export default [
     route("/search", "features/products/pages/search-page.tsx"),
     route("/submit", "features/products/pages/submit-product-page.tsx"),
     route("/promote", "features/products/pages/promote-page.tsx"),
+    route(
+      "/promote/success",
+      "features/products/pages/promote-success-page.tsx"
+    ),
     ...prefix("/:productId", [
       index("features/products/pages/product-redirect-page.tsx"),
       layout("features/products/layouts/product-overview-layout.tsx", [
@@ -53,7 +59,9 @@ export default [
   ]),
   ...prefix("/ideas", [
     index("features/ideas/pages/ideas-page.tsx"),
-    route("/:ideaId", "features/ideas/pages/idea-page.tsx")
+    route("/:ideaId", "features/ideas/pages/idea-page.tsx"),
+    route("/generate", "features/ideas/pages/generate-idea-page.tsx"),
+    route("/get", "features/ideas/pages/get-idea-page.tsx")
   ]),
   ...prefix("/jobs", [
     index("features/jobs/pages/jobs-page.tsx"),
@@ -72,12 +80,14 @@ export default [
         route("/start", "features/auth/pages/social-start-page.tsx"),
         route("/complete", "features/auth/pages/social-complete-page.tsx")
       ])
-    ])
+    ]),
+    route("/logout", "features/auth/pages/logout-page.tsx")
   ]),
   ...prefix("/community", [
     index("features/community/pages/community-page.tsx"),
     route("/:postId", "features/community/pages/post-page.tsx"),
-    route("/submit", "features/community/pages/submit-post-page.tsx")
+    route("/submit", "features/community/pages/submit-post-page.tsx"),
+    route("/:postId/upvote", "features/community/pages/upvote-post-page.tsx")
   ]),
   ...prefix("/teams", [
     index("features/teams/pages/teams-page.tsx"),
@@ -98,18 +108,24 @@ export default [
     layout("features/users/layouts/messages-layout.tsx", [
       ...prefix("/messages", [
         index("features/users/pages/messages-page.tsx"),
-        route("/:messageId", "features/users/pages/message-page.tsx")
+        route("/:messageRoomId", "features/users/pages/message-page.tsx")
       ])
     ]),
     route("/profile", "features/users/pages/my-profile-page.tsx"),
     route("/settings", "features/users/pages/settings-page.tsx"),
-    route("/notifications", "features/users/pages/notifications-page.tsx")
+    route("/notifications", "features/users/pages/notifications-page.tsx"),
+    route(
+      "/notifications/:notificationId/see",
+      "features/users/pages/see-notification-page.tsx"
+    )
   ]),
-  layout("features/users/layouts/profile-layout.tsx", [
-    ...prefix("/users/:username", [
+  ...prefix("/users/:username", [
+    layout("features/users/layouts/profile-layout.tsx", [
       index("features/users/pages/profile-page.tsx"),
       route("/products", "features/users/pages/profile-products-page.tsx"),
-      route("/posts", "features/users/pages/profile-posts-page.tsx")
+      route("/posts", "features/users/pages/profile-posts-page.tsx"),
+      route("/messages", "features/users/pages/send-message-page.tsx"),
+      route("/welcome", "features/users/pages/welcome-page.tsx")
     ])
   ])
 ] satisfies RouteConfig;

@@ -1,4 +1,4 @@
-import { Form, Link, NavLink, Outlet } from "react-router";
+import { Form, Link, NavLink, Outlet, useOutletContext } from "react-router";
 import {
   Avatar,
   AvatarFallback,
@@ -16,49 +16,87 @@ import {
 } from "~/common/components/ui/dialog";
 import { Textarea } from "~/common/components/ui/textarea";
 import { cn } from "~/lib/utils";
+import { makeSSRClient } from "~/supa-client";
+import { getUserProfile } from "../queries";
+import type { Route } from "./+types/profile-layout";
 
-export default function ProfileLayout() {
+export const meta: Route.MetaFunction = ({ data }) => {
+  const name = data?.user?.name ?? "User";
+  return [{ title: `${name} | wemake` }];
+};
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  const { client } = makeSSRClient(request);
+  const user = await getUserProfile(client, {
+    username: params.username
+  });
+  return { user };
+};
+
+export default function ProfileLayout({
+  loaderData,
+  params
+}: Route.ComponentProps) {
+  const { isLoggedIn, username } = useOutletContext<{
+    isLoggedIn: boolean;
+    username?: string;
+  }>();
   return (
     <div className="space-y-10">
       <div className="flex items-center gap-4">
         <Avatar className="size-40">
-          <AvatarImage src="https://github.com/shadcn.png" />
-          <AvatarFallback>N</AvatarFallback>
+          {loaderData.user.avatar ? (
+            <AvatarImage src={loaderData.user.avatar} />
+          ) : (
+            <AvatarFallback className="text-2xl">
+              {loaderData.user.name[0]}
+            </AvatarFallback>
+          )}
         </Avatar>
         <div className="space-y-5">
           <div className="flex gap-2">
-            <h1 className="text-2xl font-semibold">John Doe</h1>
-            <Button variant="outline" asChild>
-              <Link to="/my/settings">Edit profile</Link>
-            </Button>
-            <Button variant="secondary">Follow</Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="secondary">Message</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Message</DialogTitle>
-                </DialogHeader>
-                <DialogDescription className="space-y-4">
-                  <span className="text-muted-foreground text-sm">
-                    Send a message to John Doe
-                  </span>
-                  <Form className="space-y-4">
-                    <Textarea
-                      placeholder="Message"
-                      className="resize-none"
-                      rows={4}
-                    />
-                    <Button type="submit">Send</Button>
-                  </Form>
-                </DialogDescription>
-              </DialogContent>
-            </Dialog>
+            <h1 className="text-2xl font-semibold">{loaderData.user.name}</h1>
+            {isLoggedIn && username === params.username ? (
+              <Button variant="outline" asChild>
+                <Link to="/my/settings">Edit profile</Link>
+              </Button>
+            ) : null}
+            {isLoggedIn && username !== params.username ? (
+              <>
+                <Button variant="secondary">Follow</Button>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="secondary">Message</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Message</DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription className="space-y-4">
+                      <span className="text-muted-foreground text-sm">
+                        Send a message to John Doe
+                      </span>
+                      <Form className="space-y-4">
+                        <Textarea
+                          placeholder="Message"
+                          className="resize-none"
+                          rows={4}
+                        />
+                        <Button type="submit">Send</Button>
+                      </Form>
+                    </DialogDescription>
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">@john_doe</span>
-            <Badge variant={"secondary"}>Product Designer</Badge>
+            <span className="text-muted-foreground text-sm">
+              @{loaderData.user.username}
+            </span>
+            <Badge variant={"secondary"} className="capitalize">
+              {loaderData.user.role}
+            </Badge>
             <Badge variant={"secondary"}>100 followers</Badge>
             <Badge variant={"secondary"}>100 following</Badge>
           </div>
@@ -66,9 +104,12 @@ export default function ProfileLayout() {
       </div>
       <div className="flex gap-5">
         {[
-          { label: "About", to: "/users/username" },
-          { label: "Products", to: "/users/username/products" },
-          { label: "Posts", to: "/users/username/posts" }
+          { label: "About", to: `/users/${loaderData.user.username}` },
+          {
+            label: "Products",
+            to: `/users/${loaderData.user.username}/products`
+          },
+          { label: "Posts", to: `/users/${loaderData.user.username}/posts` }
         ].map((item) => (
           <NavLink
             end
@@ -86,7 +127,12 @@ export default function ProfileLayout() {
         ))}
       </div>
       <div className="max-w-screen-md">
-        <Outlet />
+        <Outlet
+          context={{
+            headline: loaderData.user.headline,
+            bio: loaderData.user.bio
+          }}
+        />
       </div>
     </div>
   );

@@ -1,10 +1,18 @@
+import { DateTime } from "luxon";
 import { Link, type MetaFunction } from "react-router";
 import { PostCard } from "~/features/community/components/post-card";
+import { getPosts } from "~/features/community/queries";
 import { IdeaCard } from "~/features/ideas/components/idea-card";
+import { getGptIdeas } from "~/features/ideas/queries";
 import { JobCard } from "~/features/jobs/components/job-card";
+import { getJobs } from "~/features/jobs/queries";
 import { ProductCard } from "~/features/products/components/product-card";
+import { getProductsByDateRange } from "~/features/products/queries";
 import { TeamCard } from "~/features/teams/components/team-card";
+import { getTeams } from "~/features/teams/queries";
+import { makeSSRClient } from "~/supa-client";
 import { Button } from "../components/ui/button";
+import type { Route } from "./+types/home-page";
 
 export const meta: MetaFunction = () => {
   return [
@@ -13,7 +21,24 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-export default function HomePage() {
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const products = await getProductsByDateRange(client, {
+    startDate: DateTime.now().startOf("day"),
+    endDate: DateTime.now().endOf("day"),
+    limit: 7
+  });
+  const posts = await getPosts(client, {
+    limit: 7,
+    sorting: "newest"
+  });
+  const ideas = await getGptIdeas(client, { limit: 7 });
+  const jobs = await getJobs(client, { limit: 11 });
+  const teams = await getTeams(client, { limit: 7 });
+  return { products, posts, ideas, jobs, teams };
+};
+
+export default function HomePage({ loaderData }: Route.ComponentProps) {
   return (
     <div className="space-y-40">
       <div className="grid grid-cols-3 gap-4">
@@ -24,19 +49,19 @@ export default function HomePage() {
           <p className="text-foreground text-xl font-light">
             The best products made by our community today.
           </p>
-          <Button asChild className="p-0 text-lg" variant="link">
+          <Button variant="link" asChild className="p-0 text-lg">
             <Link to="/products/leaderboards">Explore all products &rarr;</Link>
           </Button>
         </div>
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.products.map((product, index) => (
           <ProductCard
-            key={`postId-${index}`}
-            commentsCount={12}
-            description="Product Description"
-            id={`productId-${index}`}
-            name="Product Name"
-            viewsCount={12}
-            votesCount={120}
+            key={product.product_id}
+            id={product.product_id}
+            name={product.name}
+            description={product.tagline}
+            reviewsCount={product.reviews}
+            viewsCount={product.views}
+            votesCount={product.upvotes}
           />
         ))}
       </div>
@@ -48,18 +73,20 @@ export default function HomePage() {
           <p className="text-foreground text-xl font-light">
             The latest discussions from our community.
           </p>
-          <Button asChild className="p-0 text-lg" variant="link">
+          <Button variant="link" asChild className="p-0 text-lg">
             <Link to="/community">Explore all discussions &rarr;</Link>
           </Button>
         </div>
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.posts.map((post) => (
           <PostCard
-            author="Nico"
-            authorAvatarUrl="https://github.com/apple.png"
-            category="Productivity"
-            id={`postId-${index}`}
-            postedAt="12 hours ago"
-            title="What is the best productivity tool?"
+            key={post.post_id}
+            id={post.post_id}
+            title={post.title}
+            author={post.author}
+            authorAvatarUrl={post.author_avatar}
+            category={post.topic}
+            postedAt={post.created_at}
+            votesCount={post.upvotes}
           />
         ))}
       </div>
@@ -71,19 +98,19 @@ export default function HomePage() {
           <p className="text-foreground text-xl font-light">
             Find ideas for your next project.
           </p>
-          <Button asChild className="p-0 text-lg" variant="link">
+          <Button variant="link" asChild className="p-0 text-lg">
             <Link to="/ideas">Explore all ideas &rarr;</Link>
           </Button>
         </div>
-        {Array.from({ length: 5 }).map((_, index) => (
+        {loaderData.ideas.map((idea) => (
           <IdeaCard
-            key={`ideaId-${index}`}
-            claimed={index % 2 === 0}
-            id={`ideaId-${index}`}
-            likesCount={12}
-            postedAt="12 hours ago"
-            title="A startup that creates an AI-powered generated personal trainer, delivering customized fitness recommendations and tracking of progress using a mobile app to track workouts and progress as well as a website to manage the business."
-            viewsCount={123}
+            key={idea.gpt_idea_id}
+            id={idea.gpt_idea_id}
+            title={idea.idea}
+            viewsCount={idea.views}
+            postedAt={idea.created_at}
+            likesCount={idea.likes}
+            claimed={idea.is_claimed}
           />
         ))}
       </div>
@@ -95,22 +122,22 @@ export default function HomePage() {
           <p className="text-foreground text-xl font-light">
             Find your dream job.
           </p>
-          <Button asChild className="p-0 text-lg" variant="link">
+          <Button variant="link" asChild className="p-0 text-lg">
             <Link to="/jobs">Explore all jobs &rarr;</Link>
           </Button>
         </div>
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.jobs.map((job) => (
           <JobCard
-            key={`jobId-${index}`}
-            company="Tesla"
-            companyHq="San Francisco, CA"
-            companyLogoUrl="https://github.com/facebook.png"
-            id={`jobId-${index}`}
-            positionLocation="Remote"
-            postedAt="12 hours ago"
-            salary="$100,000 - $120,000"
-            title="Software Engineer"
-            type="Full-time"
+            key={job.job_id}
+            id={job.job_id}
+            company={job.company_name}
+            companyLogoUrl={job.company_logo}
+            companyHq={job.company_location}
+            title={job.position}
+            postedAt={job.created_at}
+            type={job.job_type}
+            positionLocation={job.location}
+            salary={job.salary_range}
           />
         ))}
       </div>
@@ -122,22 +149,20 @@ export default function HomePage() {
           <p className="text-foreground text-xl font-light">
             Join a team looking for a new member.
           </p>
-          <Button asChild className="p-0 text-lg" variant="link">
-            <Link to="/teams">Explore all teams &rarr;</Link>
+          <Button variant="link" asChild className="p-0 text-lg">
+            <Link prefetch="viewport" to="/teams">
+              Explore all teams &rarr;
+            </Link>
           </Button>
         </div>
-        {Array.from({ length: 7 }).map((_, index) => (
+        {loaderData.teams.map((team) => (
           <TeamCard
-            key={`teamId-${index}`}
-            id={`teamId-${index}`}
-            leaderAvatarUrl="https://github.com/inthetiger.png"
-            leaderUsername="lynn"
-            positions={[
-              "React Developer",
-              "Backend Developer",
-              "Product Manager"
-            ]}
-            projectDescription="a new social media platform"
+            key={team.team_id}
+            id={team.team_id}
+            leaderUsername={team.team_leader.username}
+            leaderAvatarUrl={team.team_leader.avatar}
+            positions={team.roles.split(",")}
+            projectDescription={team.product_description}
           />
         ))}
       </div>

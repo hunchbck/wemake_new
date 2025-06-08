@@ -1,8 +1,21 @@
-export default function ProductVisitPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-bold">Product Visit</h1>
-      <p>외부 사이트 방문 또는 제품 관련 링크를 표시합니다.</p>
-    </div>
-  );
-}
+import { redirect } from "react-router";
+import { makeSSRClient } from "~/supa-client";
+import type { Route } from "./+types/product-visit-page";
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  const { client, headers } = makeSSRClient(request);
+  const { error, data } = await client
+    .from("products")
+    .select("url")
+    .eq("product_id", params.productId)
+    .single();
+  if (data) {
+    await client.rpc("track_event", {
+      event_type: "product_visit",
+      event_data: {
+        product_id: params.productId
+      }
+    });
+    return redirect(data.url);
+  }
+};

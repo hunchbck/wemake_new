@@ -1,6 +1,17 @@
 import { redirect } from "react-router";
+import { makeSSRClient } from "~/supa-client";
+import { getUserById } from "../queries";
+import type { Route } from "./+types/my-profile-page";
 
-export function loader() {
-  // find user using the cookies
-  return redirect("/users/nico");
+export async function loader({ request }: Route.LoaderArgs) {
+  const { client } = makeSSRClient(request);
+  const {
+    data: { user }
+  } = await client.auth.getUser();
+  if (user) {
+    const profile = await getUserById(client, { id: user.id });
+    console.log(profile, "profile");
+    return redirect(`/users/${encodeURIComponent(profile.username)}`);
+  }
+  return redirect("/auth/login");
 }

@@ -4,6 +4,8 @@ import {
   parseCookieHeader,
   serializeCookieHeader
 } from "@supabase/ssr";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 import type { Database as SupabaseDatabase } from "database.types";
 import type { MergeDeep, SetFieldType, SetNonNullable } from "type-fest";
 
@@ -12,6 +14,11 @@ export type Database = MergeDeep<
   {
     public: {
       Views: {
+        messages_view: {
+          Row: SetNonNullable<
+            SupabaseDatabase["public"]["Views"]["messages_view"]["Row"]
+          >;
+        };
         community_post_list_view: {
           Row: SetFieldType<
             SetNonNullable<
@@ -26,7 +33,7 @@ export type Database = MergeDeep<
             SupabaseDatabase["public"]["Views"]["product_overview_view"]["Row"]
           >;
         };
-        community_post_detail: {
+        ty_post_detail: {
           Row: SetNonNullable<
             SupabaseDatabase["public"]["Views"]["community_post_detail"]["Row"]
           >;
@@ -42,25 +49,23 @@ export type Database = MergeDeep<
 >;
 
 export const browserClient = createBrowserClient<Database>(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!
+  "https://hixnvfbzyqzdtiwterpw.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpeG52ZmJ6eXF6ZHRpd3RlcnB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk1NjM0MDIsImV4cCI6MjA1NTEzOTQwMn0.MKWZC0MwlZpNyviHeilRDX_N11IA8Ve5GkarmEFtaqo"
 );
 
-export const makeSSRClient = (request: Request) => {
+export const makeSSRClient = (
+  request: Request
+): { client: SupabaseClient<Database>; headers: Headers } => {
   const headers = new Headers();
   const serverSideClient = createServerClient<Database>(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async getAll() {
-          const cookies = parseCookieHeader(
-            request.headers.get("cookie") ?? ""
+        getAll() {
+          return parseCookieHeader(request.headers.get("Cookie") ?? "").map(
+            (c) => ({ name: c.name, value: c.value ?? "" })
           );
-          return cookies.map(({ name, value }) => ({
-            name,
-            value: value ?? ""
-          }));
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -78,3 +83,8 @@ export const makeSSRClient = (request: Request) => {
     headers
   };
 };
+
+export const adminClient = createClient<Database>(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);

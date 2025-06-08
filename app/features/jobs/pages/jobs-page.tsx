@@ -1,9 +1,12 @@
-import { useSearchParams } from "react-router";
+import { data, useSearchParams } from "react-router";
+import { z } from "zod";
 import { Hero } from "~/common/components/hero";
 import { Button } from "~/common/components/ui/button";
 import { cn } from "~/lib/utils";
+import { makeSSRClient } from "~/supa-client";
 import { JobCard } from "../components/job-card";
 import { JOB_TYPES, LOCATION_TYPES, SALARY_RANGE } from "../constants";
+import { getJobs } from "../queries";
 import type { Route } from "./+types/jobs-page";
 
 export const meta: Route.MetaFunction = () => {
@@ -13,7 +16,41 @@ export const meta: Route.MetaFunction = () => {
   ];
 };
 
-export default function JobsPage() {
+const searchParamsSchema = z.object({
+  type: z
+    .enum(JOB_TYPES.map((type) => type.value) as [string, ...string[]])
+    .optional(),
+  location: z
+    .enum(LOCATION_TYPES.map((type) => type.value) as [string, ...string[]])
+    .optional(),
+  salary: z.enum(SALARY_RANGE).optional()
+});
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const url = new URL(request.url);
+  const { success, data: parsedData } = searchParamsSchema.safeParse(
+    Object.fromEntries(url.searchParams)
+  );
+  if (!success) {
+    throw data(
+      {
+        error_code: "invalid_search_params",
+        message: "Invalid search params"
+      },
+      { status: 400 }
+    );
+  }
+  const { client, headers } = makeSSRClient(request);
+  const jobs = await getJobs(client, {
+    limit: 40,
+    location: parsedData.location,
+    type: parsedData.type,
+    salary: parsedData.salary
+  });
+  return { jobs };
+};
+
+export default function JobsPage({ loaderData }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const onFilterClick = (key: string, value: string) => {
     searchParams.set(key, value);
@@ -24,18 +61,18 @@ export default function JobsPage() {
       <Hero title="Jobs" subtitle="Companies looking for makers" />
       <div className="grid grid-cols-1 items-start gap-20 xl:grid-cols-6">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:col-span-4">
-          {Array.from({ length: 20 }).map((_, index) => (
+          {loaderData.jobs.map((job) => (
             <JobCard
-              key={`jobId-${index}`}
-              id={`jobId-${index}`}
-              company="Tesla"
-              companyLogoUrl="https://github.com/facebook.png"
-              companyHq="San Francisco, CA"
-              title="Software Engineer"
-              postedAt="12 hours ago"
-              type="Full-time"
-              positionLocation="Remote"
-              salary="$100,000 - $120,000"
+              key={job.job_id}
+              id={job.job_id}
+              company={job.company_name}
+              companyLogoUrl={job.company_logo}
+              companyHq={job.company_location}
+              title={job.position}
+              postedAt={job.created_at}
+              type={job.job_type}
+              positionLocation={job.location}
+              salary={job.salary_range}
             />
           ))}
         </div>

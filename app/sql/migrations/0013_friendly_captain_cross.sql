@@ -1,0 +1,1 @@
+ALTER TABLE "post_replies" RENAME COLUMN "parent_id" TO "parent_reply_id";

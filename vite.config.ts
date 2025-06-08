@@ -4,5 +4,11 @@ import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()],
+  ssr: {
+    noExternal: ["@supabase/supabase-js"]
+  },
+  server: {
+    allowedHosts: true
+  },
+  plugins: [tailwindcss(), reactRouter(), tsconfigPaths()]
 });

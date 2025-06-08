@@ -1,7 +1,11 @@
-import { AvatarFallback } from "@radix-ui/react-avatar";
 import { ChevronUpIcon, DotIcon } from "lucide-react";
-import { Link } from "react-router";
-import { Avatar, AvatarImage } from "~/common/components/ui/avatar";
+import { DateTime } from "luxon";
+import { Link, useFetcher } from "react-router";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage
+} from "~/common/components/ui/avatar";
 import { Button } from "~/common/components/ui/button";
 import {
   Card,
@@ -12,14 +16,15 @@ import {
 import { cn } from "~/lib/utils";
 
 interface PostCardProps {
-  id: string;
+  id: number;
   title: string;
   author: string;
-  authorAvatarUrl: string;
+  authorAvatarUrl: string | null;
   category: string;
   postedAt: string;
   expanded?: boolean;
   votesCount?: number;
+  isUpvoted?: boolean;
 }
 
 export function PostCard({
@@ -30,8 +35,24 @@ export function PostCard({
   category,
   postedAt,
   expanded = false,
-  votesCount = 0
+  votesCount = 0,
+  isUpvoted = false
 }: PostCardProps) {
+  const fetcher = useFetcher();
+  const optimisitcVotesCount =
+    fetcher.state === "idle"
+      ? votesCount
+      : isUpvoted
+        ? votesCount - 1
+        : votesCount + 1;
+  const optimisitcIsUpvoted = fetcher.state === "idle" ? isUpvoted : !isUpvoted;
+  const absorbClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    fetcher.submit(null, {
+      method: "POST",
+      action: `/community/${id}/upvote`
+    });
+  };
   return (
     <Link to={`/community/${id}`} className="block">
       <Card
@@ -52,7 +73,7 @@ export function PostCard({
                 {author} on {category}
               </span>
               <DotIcon className="h-4 w-4" />
-              <span>{postedAt}</span>
+              <span>{DateTime.fromISO(postedAt).toRelative()}</span>
             </div>
           </div>
         </CardHeader>
@@ -63,9 +84,16 @@ export function PostCard({
         )}
         {expanded && (
           <CardFooter className="flex justify-end pb-0">
-            <Button variant="outline" className="flex h-14 flex-col">
+            <Button
+              onClick={absorbClick}
+              variant="outline"
+              className={cn(
+                "flex h-14 flex-col",
+                optimisitcIsUpvoted ? "border-primary text-primary" : ""
+              )}
+            >
               <ChevronUpIcon className="size-4 shrink-0" />
-              <span>{votesCount}</span>
+              <span>{optimisitcVotesCount}</span>
             </Button>
           </CardFooter>
         )}

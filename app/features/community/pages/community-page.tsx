@@ -1,5 +1,6 @@
 import { ChevronDownIcon } from "lucide-react";
-import { Form, Link, useSearchParams } from "react-router";
+import { data, Form, Link, useSearchParams } from "react-router";
+import { z } from "zod";
 import { Hero } from "~/common/components/hero";
 import { Button } from "~/common/components/ui/button";
 import {
@@ -9,15 +10,56 @@ import {
   DropdownMenuTrigger
 } from "~/common/components/ui/dropdown-menu";
 import { Input } from "~/common/components/ui/input";
+import { makeSSRClient } from "~/supa-client";
 import { PostCard } from "../components/post-card";
 import { PERIOD_OPTIONS, SORT_OPTIONS } from "../constants";
+import { getPosts, getTopics } from "../queries";
 import type { Route } from "./+types/community-page";
 
 export const meta: Route.MetaFunction = () => {
   return [{ title: "Community | wemake" }];
 };
 
-export default function CommunityPage() {
+const searchParamsSchema = z.object({
+  sorting: z.enum(["newest", "popular"]).optional().default("newest"),
+  period: z
+    .enum(["all", "today", "week", "month", "year"])
+    .optional()
+    .default("all"),
+  keyword: z.string().optional(),
+  topic: z.string().optional()
+});
+
+export const loader = async ({ request }: Route.LoaderArgs) => {
+  const url = new URL(request.url);
+  const { success, data: parsedData } = searchParamsSchema.safeParse(
+    Object.fromEntries(url.searchParams)
+  );
+  if (!success) {
+    throw data(
+      {
+        error_code: "invalid_search_params",
+        message: "Invalid search params"
+      },
+      { status: 400 }
+    );
+  }
+
+  const { client, headers } = makeSSRClient(request);
+  const [topics, posts] = await Promise.all([
+    getTopics(client),
+    getPosts(client, {
+      limit: 20,
+      sorting: parsedData.sorting,
+      period: parsedData.period,
+      keyword: parsedData.keyword,
+      topic: parsedData.topic
+    })
+  ]);
+  return { topics, posts };
+};
+
+export default function CommunityPage({ loaderData }: Route.ComponentProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const sorting = searchParams.get("sorting") || "newest";
   const period = searchParams.get("period") || "all";
@@ -82,7 +124,7 @@ export default function CommunityPage() {
               <Form className="w-2/3">
                 <Input
                   type="text"
-                  name="search"
+                  name="keyword"
                   placeholder="Search for discussions"
                 />
               </Form>
@@ -92,15 +134,17 @@ export default function CommunityPage() {
             </Button>
           </div>
           <div className="space-y-5">
-            {Array.from({ length: 11 }).map((_, index) => (
+            {loaderData.posts.map((post) => (
               <PostCard
-                key={`postId-${index}`}
-                id={`postId-${index}`}
-                title="What is the best productivity tool?"
-                author="Nico"
-                authorAvatarUrl="https://github.com/apple.png"
-                category="Productivity"
-                postedAt="12 hours ago"
+                key={post.post_id}
+                id={post.post_id}
+                title={post.title}
+                author={post.author}
+                authorAvatarUrl={post.author_avatar}
+                category={post.topic}
+                postedAt={post.created_at}
+                votesCount={post.upvotes}
+                isUpvoted={post.is_upvoted}
                 expanded
               />
             ))}
@@ -111,15 +155,14 @@ export default function CommunityPage() {
             Topics
           </span>
           <div className="flex flex-col items-start gap-2">
-            {[
-              "AI Tools",
-              "Design Tools",
-              "Dev Tools",
-              "Note Taking Apps",
-              "Productivity Tools"
-            ].map((category) => (
-              <Button asChild variant={"link"} key={category} className="pl-0">
-                <Link to={`/community?topic=${category}`}>{category}</Link>
+            {loaderData.topics.map((topic) => (
+              <Button
+                asChild
+                variant={"link"}
+                key={topic.slug}
+                className="pl-0"
+              >
+                <Link to={`/community?topic=${topic.slug}`}>{topic.name}</Link>
               </Button>
             ))}
           </div>

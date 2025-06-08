@@ -2,11 +2,11 @@ import { useSearchParams } from "react-router";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
-  PaginationEllipsis,
   PaginationNext,
-  PaginationPrevious,
+  PaginationPrevious
 } from "./ui/pagination";
 
 type ProductPaginationProps = {
@@ -14,7 +14,7 @@ type ProductPaginationProps = {
 };
 
 export default function ProductPagination({
-  totalPages,
+  totalPages
 }: ProductPaginationProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   let page = Number(searchParams.get("page") ?? 1);
@@ -26,7 +26,7 @@ export default function ProductPagination({
   }
   const onClick = (page: number) => {
     searchParams.set("page", page.toString());
-    setSearchParams(searchParams);
+    setSearchParams(searchParams, { preventScrollReset: true });
   };
   return (
     <div>

@@ -4,29 +4,43 @@ import { Hero } from "~/common/components/hero";
 import ProductPagination from "~/common/components/product-pagination";
 import { Button } from "~/common/components/ui/button";
 import { Input } from "~/common/components/ui/input";
+import { makeSSRClient } from "~/supa-client";
 import { ProductCard } from "../components/product-card";
+import { getPagesBySearch, getProductsBySearch } from "../queries";
 import type { Route } from "./+types/search-page";
 
 export const meta: Route.MetaFunction = () => {
   return [
     { title: "Search Products | wemake" },
-    { name: "description", content: "Search for products" },
+    { name: "description", content: "Search for products" }
   ];
 };
 
-const paramsSchema = z.object({
+const searchParams = z.object({
   query: z.string().optional().default(""),
-  page: z.coerce.number().optional().default(1),
+  page: z.coerce.number().optional().default(1)
 });
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const { success, data: parsedData } = paramsSchema.safeParse(
-    Object.fromEntries(url.searchParams),
+  const { success, data: parsedData } = searchParams.safeParse(
+    Object.fromEntries(url.searchParams)
   );
   if (!success) {
     throw new Error("Invalid params");
   }
+  if (parsedData.query === "") {
+    return { products: [], totalPages: 1 };
+  }
+  const { client, headers } = makeSSRClient(request);
+  const products = await getProductsBySearch(client, {
+    query: parsedData.query,
+    page: parsedData.page
+  });
+  const totalPages = await getPagesBySearch(client, {
+    query: parsedData.query
+  });
+  return { products, totalPages };
 }
 
 export default function SearchPage({ loaderData }: Route.ComponentProps) {
@@ -45,19 +59,19 @@ export default function SearchPage({ loaderData }: Route.ComponentProps) {
         <Button type="submit">Search</Button>
       </Form>
       <div className="mx-auto w-full max-w-screen-md space-y-5">
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.products.map((product) => (
           <ProductCard
-            key={`productId-${index}`}
-            commentsCount={12}
-            description="Product Description"
-            id={`productId-${index}`}
-            name="Product Name"
-            viewsCount={12}
-            votesCount={120}
+            key={product.product_id}
+            id={product.product_id}
+            name={product.name}
+            description={product.tagline}
+            reviewsCount={product.reviews}
+            viewsCount={product.views}
+            votesCount={product.upvotes}
           />
         ))}
       </div>
-      <ProductPagination totalPages={10} />
+      <ProductPagination totalPages={loaderData.totalPages} />
     </div>
   );
 }

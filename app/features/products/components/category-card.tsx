@@ -4,11 +4,11 @@ import {
   Card,
   CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "~/common/components/ui/card";
 
 interface CategoryCardProps {
-  id: string;
+  id: number;
   name: string;
   description: string;
 }
